@@ -2291,6 +2291,14 @@ bool NifModel::saveItem( NifItem * parent, NifOStream & stream ) const
 	if ( !parent )
 		return false;
 
+    bool stopWrite = false;
+    if ( getUserVersion2() == 155 && parent->parent() == root ) {
+        if ( parent->name() == "BSLightingShaderProperty" || parent->name() == "BSEffectShaderProperty" )
+            stopWrite = true;
+    }
+
+    QString name;
+
 	for ( auto child : parent->children() ) {
 		if ( child->isAbstract() ) {
 			qDebug() << "Not saving abstract item " << child->name();
@@ -2314,6 +2322,18 @@ bool NifModel::saveItem( NifItem * parent, NifOStream & stream ) const
 					return false;
 			}
 		}
+
+        if ( stopWrite && child->name() == "Name" ) {
+            auto idx = child->value().get<int>();
+            if ( idx != -1 ) {
+                NifItem * header = getHeaderItem();
+                QModelIndex stringIndex = createIndex( header->row(), 0, header );
+                name = get<QString>( this->index( idx, 0, getIndex( stringIndex, "Strings" ) ) );
+            }
+        }
+
+        if ( stopWrite && child->name() == "Controller" && !name.isEmpty() )
+            break;
 	}
 
 	return true;
