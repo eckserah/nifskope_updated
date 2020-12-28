@@ -215,8 +215,8 @@ void Scene::make( NifModel * nif, bool flushTextures )
 	if ( !nif )
 		return;
 
-    /*game = Game::GameManager::get_game(nif->getVersionNumber(), nif->getUserVersion(), nif->getUserVersion2());
-    if ( game == Game::FALLOUT_76 )
+    game = Game::GameManager::get_game(nif->getVersionNumber(), nif->getUserVersion(), nif->getUserVersion2());
+    /*if ( game == Game::FALLOUT_76 )
         emit disableSave();*/
 
 	update( nif, QModelIndex() );
