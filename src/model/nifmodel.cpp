@@ -2313,7 +2313,6 @@ bool NifModel::saveItem( NifItem * parent, NifOStream & stream ) const
 		return false;
 
     bool stopWrite = shouldStop(parent);
-
     QString name;
 
 	for ( auto child : parent->children() ) {
