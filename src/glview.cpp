@@ -156,7 +156,7 @@ GLView::GLView( const QGLFormat & format, QWidget * p, const QGLWidget * shareWi
 	//setAttribute( Qt::WA_NoSystemBackground );
 	setAutoFillBackground( false );
 	setAcceptDrops( true );
-	setContextMenuPolicy( Qt::CustomContextMenu );
+    setContextMenuPolicy( Qt::CustomContextMenu );
 
 	// Manually handle the buffer swap
 	// Fixes bug with QGraphicsView and double buffering
@@ -513,95 +513,7 @@ void GLView::paintGL()
 	glPopMatrix();
 #endif
 
-	GLfloat mat_spec[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	if ( scene->options & Scene::DoLighting ) {
-		// Setup light
-		Vector4 lightDir( 0.0, 0.0, 1.0, 0.0 );
-
-		if ( !frontalLight ) {
-			float decl = declination / 180.0 * PI;
-			Vector3 v( sin( decl ), 0, cos( decl ) );
-			Matrix m; m.fromEuler( 0, 0, planarAngle / 180.0 * PI );
-			v = m * v;
-			lightDir = Vector4( viewTrans.rotation * v, 0.0 );
-
-			if ( scene->visMode & Scene::VisLightPos ) {
-				glEnable( GL_BLEND );
-				glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-				glEnable( GL_DEPTH_TEST );
-				glDepthMask( GL_TRUE );
-				glDepthFunc( GL_LESS );
-
-				glPushMatrix();
-				glLoadMatrix( viewTrans );
-
-				glLineWidth( 2.0f );
-				glColor4f( 1.0f, 1.0f, 1.0f, 0.5f );
-
-				// Scale the distance a bit
-				float l = axis + 64.0;
-				l = (l < 128) ? axis * 1.5 : l;
-				l = (l > 2048) ? axis * 0.66 : l;
-				l = (l > 1024) ? axis * 0.75 : l;
-
-				drawDashLine( Vector3( 0, 0, 0 ), v * l, 30 );
-				drawSphere( v * l, axis / 10 );
-				glPopMatrix();
-				glDisable( GL_BLEND );
-			}
-		}
-
-		float amb = ambient;
-		if ( (scene->visMode & Scene::VisNormalsOnly)
-			&& (scene->options & Scene::DoTexturing)
-			&& !(scene->options & Scene::DisableShaders) )
-		{
-			amb = 0.1f;
-		}
-		
-		GLfloat mat_amb[] = { amb, amb, amb, 1.0f };
-		GLfloat mat_diff[] = { brightness, brightness, brightness, 1.0f };
-		
-
-		glShadeModel( GL_SMOOTH );
-		//glEnable( GL_LIGHTING );
-		glEnable( GL_LIGHT0 );
-		glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
-		glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
-		glLightfv( GL_LIGHT0, GL_SPECULAR, mat_diff );
-		glLightfv( GL_LIGHT0, GL_POSITION, lightDir.data() );
-	} else {
-		float amb = 0.5f;
-		if ( scene->options & Scene::DisableShaders ) {
-			amb = 0.0f;
-		}
-
-		GLfloat mat_amb[] = { amb, amb, amb, 1.0f };
-		GLfloat mat_diff[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		
-
-		glShadeModel( GL_SMOOTH );
-		//glEnable( GL_LIGHTING );
-		glEnable( GL_LIGHT0 );
-		glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
-		glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
-		glLightfv( GL_LIGHT0, GL_SPECULAR, mat_spec );
-	}
-
-	if ( scene->visMode & Scene::VisSilhouette ) {
-		GLfloat mat_diff[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		GLfloat mat_amb[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-		glShadeModel( GL_FLAT );
-		//glEnable( GL_LIGHTING );
-		glEnable( GL_LIGHT0 );
-		glLightModelfv( GL_LIGHT_MODEL_AMBIENT, mat_diff );
-		glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_diff );
-		glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
-		glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
-		glLightfv( GL_LIGHT0, GL_SPECULAR, mat_spec );
-	}
+    doLighting();
 
 	if ( scene->options & Scene::DoMultisampling )
 		glEnable( GL_MULTISAMPLE_ARB );
@@ -1329,32 +1241,124 @@ void GLView::advanceGears()
 	if ( kbd[ Qt::Key_Right ] ) rotate( 0, 0, +cfg.rotSpd * dT );
 
 	// Movement
-	if ( kbd[ Qt::Key_A ] ) move( +cfg.moveSpd * dT, 0, 0 );
-	if ( kbd[ Qt::Key_D ] ) move( -cfg.moveSpd * dT, 0, 0 );
-	if ( kbd[ Qt::Key_W ] ) move( 0, 0, +cfg.moveSpd * dT );
-	if ( kbd[ Qt::Key_S ] ) move( 0, 0, -cfg.moveSpd * dT );
+    if ( kbd[ Qt::Key_A ] ) move( +cfg.moveSpd * dT, 0, 0 );
+    if ( kbd[ Qt::Key_D ] ) move( -cfg.moveSpd * dT, 0, 0 );
+    if ( kbd[ Qt::Key_W ] ) move( 0, 0, +cfg.moveSpd * dT );
+    if ( kbd[ Qt::Key_S ] ) move( 0, 0, -cfg.moveSpd * dT );
 	//if ( kbd[ Qt::Key_F ] ) move( 0, +MOV_SPD * dT, 0 );
 	//if ( kbd[ Qt::Key_R ] ) move( 0, -MOV_SPD * dT, 0 );
 
 	// Zoom
-	if ( kbd[ Qt::Key_Q ] ) setDistance( Dist * 1.0 / 1.1 );
-	if ( kbd[ Qt::Key_E ] ) setDistance( Dist * 1.1 );
+    if ( kbd[ Qt::Key_Q ] ) setDistance( Dist * 1.0f / 1.1f );
+    if ( kbd[ Qt::Key_E ] ) setDistance( Dist * 1.1f );
 
 	// Focal Length
 	if ( kbd[ Qt::Key_PageUp ] )   zoom( 1.1f );
 	if ( kbd[ Qt::Key_PageDown ] ) zoom( 1 / 1.1f );
 
-	if ( mouseMov[0] != 0 || mouseMov[1] != 0 || mouseMov[2] != 0 ) {
+    if ( mouseMov[0] != 0.0f || mouseMov[1] != 0.0f || mouseMov[2] != 0.0f ) {
 		move( mouseMov[0], mouseMov[1], mouseMov[2] );
 		mouseMov = Vector3();
 	}
 
-	if ( mouseRot[0] != 0 || mouseRot[1] != 0 || mouseRot[2] != 0 ) {
+    if ( mouseRot[0] != 0.0f || mouseRot[1] != 0.0f || mouseRot[2] != 0.0f ) {
 		rotate( mouseRot[0], mouseRot[1], mouseRot[2] );
 		mouseRot = Vector3();
 	}
 }
 
+void GLView::doLighting()
+{
+    GLfloat mat_spec[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    if ( scene->options & Scene::DoLighting ) {
+        // Setup light
+        Vector4 lightDir( 0.0, 0.0, 1.0, 0.0 );
+
+        if ( !frontalLight ) {
+            float decl = declination / 180.0 * PI;
+            Vector3 v( sin( decl ), 0, cos( decl ) );
+            Matrix m; m.fromEuler( 0, 0, planarAngle / 180.0 * PI );
+            v = m * v;
+            lightDir = Vector4( viewTrans.rotation * v, 0.0 );
+
+            if ( scene->visMode & Scene::VisLightPos ) {
+                glEnable( GL_BLEND );
+                glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+                glEnable( GL_DEPTH_TEST );
+                glDepthMask( GL_TRUE );
+                glDepthFunc( GL_LESS );
+
+                glPushMatrix();
+                glLoadMatrix( viewTrans );
+
+                glLineWidth( 2.0f );
+                glColor4f( 1.0f, 1.0f, 1.0f, 0.5f );
+
+                // Scale the distance a bit
+                float l = axis + 64.0;
+                l = (l < 128) ? axis * 1.5 : l;
+                l = (l > 2048) ? axis * 0.66 : l;
+                l = (l > 1024) ? axis * 0.75 : l;
+
+                drawDashLine( Vector3( 0, 0, 0 ), v * l, 30 );
+                drawSphere( v * l, axis / 10 );
+                glPopMatrix();
+                glDisable( GL_BLEND );
+            }
+        }
+
+        float amb = ambient;
+        if ( (scene->visMode & Scene::VisNormalsOnly)
+            && (scene->options & Scene::DoTexturing)
+            && !(scene->options & Scene::DisableShaders) )
+        {
+            amb = 0.1f;
+        }
+
+        GLfloat mat_amb[] = { amb, amb, amb, 1.0f };
+        GLfloat mat_diff[] = { brightness, brightness, brightness, 1.0f };
+
+
+        glShadeModel( GL_SMOOTH );
+        //glEnable( GL_LIGHTING );
+        glEnable( GL_LIGHT0 );
+        glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
+        glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
+        glLightfv( GL_LIGHT0, GL_SPECULAR, mat_diff );
+        glLightfv( GL_LIGHT0, GL_POSITION, lightDir.data() );
+    } else {
+        float amb = 0.5f;
+        if ( scene->options & Scene::DisableShaders ) {
+            amb = 0.0f;
+        }
+
+        GLfloat mat_amb[] = { amb, amb, amb, 1.0f };
+        GLfloat mat_diff[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+
+        glShadeModel( GL_SMOOTH );
+        //glEnable( GL_LIGHTING );
+        glEnable( GL_LIGHT0 );
+        glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
+        glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
+        glLightfv( GL_LIGHT0, GL_SPECULAR, mat_spec );
+    }
+
+    if ( scene->visMode & Scene::VisSilhouette ) {
+        GLfloat mat_diff[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat mat_amb[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+        glShadeModel( GL_FLAT );
+        //glEnable( GL_LIGHTING );
+        glEnable( GL_LIGHT0 );
+        glLightModelfv( GL_LIGHT_MODEL_AMBIENT, mat_diff );
+        glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_diff );
+        glLightfv( GL_LIGHT0, GL_AMBIENT, mat_amb );
+        glLightfv( GL_LIGHT0, GL_DIFFUSE, mat_diff );
+        glLightfv( GL_LIGHT0, GL_SPECULAR, mat_spec );
+    }
+}
 
 // TODO: Separate widget
 void GLView::saveImage()
@@ -1363,14 +1367,14 @@ void GLView::saveImage()
 	QGridLayout * lay = new QGridLayout( dlg );
 	dlg->setWindowTitle( tr( "Save View" ) );
 	dlg->setLayout( lay );
-	dlg->setMinimumWidth( 400 );
+    dlg->setMinimumSize(400, 200);
 
 	QString date = QDateTime::currentDateTime().toString( "yyyyMMdd_HH-mm-ss" );
 	QString name = model->getFilename();
 
 	QString nifFolder = model->getFolder();
 	// TODO: Default extension in Settings
-	QString filename = name + (!name.isEmpty() ? "_" : "") + date + ".jpg";
+    QString filename = name + (!name.isEmpty() ? "_" : "") + date + ".png";
 
 	// Default: NifSkope directory
 	// TODO: User-configurable default screenshot path in Options
@@ -1517,19 +1521,27 @@ void GLView::saveImage()
 
 				resizeGL( w, h );
 			}
-			
+
+            QColor newColor = clearColor();
+            newColor.setAlpha(0);
+            qglClearColor( newColor );
+
 			QOpenGLFramebufferObjectFormat fboFmt;
-			fboFmt.setTextureTarget( GL_TEXTURE_2D );
-			fboFmt.setInternalTextureFormat( GL_RGB );
-			fboFmt.setMipmap( false );
-			fboFmt.setAttachment( QOpenGLFramebufferObject::Attachment::Depth );
-			fboFmt.setSamples( 16 / ss );
+            fboFmt.setTextureTarget( GL_TEXTURE_3D );
+            fboFmt.setInternalTextureFormat( GL_RGBA );
+            fboFmt.setMipmap( false );
+            fboFmt.setAttachment( QOpenGLFramebufferObject::Attachment::CombinedDepthStencil );
+            fboFmt.setSamples( 256 / ss );
 
 			QOpenGLFramebufferObject fbo( w, h, fboFmt );
-			fbo.bind();
+
+            fbo.bind();
+            glClear(GL_COLOR_BUFFER_BIT);
 
 			update();
-			updateGL();
+            updateGL();
+
+            doLighting();
 
 			fbo.release();
 
@@ -1543,7 +1555,7 @@ void GLView::saveImage()
 			QImageWriter writer( file->file() );
 
 			// Set Compression for formats that can use it
-			writer.setCompression( 1 );
+            writer.setCompression( 0 );
 
 			// Handle JPEG/WebP Quality exclusively
 			//	PNG will not use compression if Quality is set
@@ -1553,19 +1565,21 @@ void GLView::saveImage()
 			} else if ( file->file().endsWith( ".webp", Qt::CaseInsensitive ) ) {
 				writer.setFormat( "webp" );
 				writer.setQuality( 75 + pixQuality->value() / 4 );
-			}
+            }
 
 			if ( writer.write( *img ) ) {
 				dlg->accept();
 			} else {
 				Message::critical( this, tr( "Could not save %1" ).arg( file->file() ) );
 			}
-
+            qglClearColor(clearColor());
 			delete img;
 			img = nullptr;
 		}
 	);
 	connect( btnCancel, &QPushButton::clicked, dlg, &QDialog::reject );
+
+    dlg->setWindowFlags(dlg->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	if ( dlg->exec() != QDialog::Accepted ) {
 		return;
@@ -1670,7 +1684,11 @@ void GLView::keyPressEvent( QKeyEvent * event )
 	//case Qt::Key_R:
 	//case Qt::Key_F:
 	case Qt::Key_Q:
-	case Qt::Key_E:
+    case Qt::Key_E:
+    case Qt::Key_U:
+    case Qt::Key_H:
+    case Qt::Key_J:
+    case Qt::Key_K:
 	case Qt::Key_Space:
 		kbd[event->key()] = true;
 		break;
@@ -1708,6 +1726,18 @@ void GLView::keyReleaseEvent( QKeyEvent * event )
 	case Qt::Key_Space:
 		kbd[event->key()] = false;
 		break;
+    case Qt::Key_U:
+    case Qt::Key_H:
+    case Qt::Key_J:
+    case Qt::Key_K:
+        if (kbd[ Qt::Key_U ] || kbd[ Qt::Key_H ] || kbd[ Qt::Key_J ] || kbd[ Qt::Key_K ]) {
+            if ( kbd[ Qt::Key_U ] ) rotate( -15, 0, 0 );
+            if ( kbd[ Qt::Key_H ] ) rotate( +15, 0, 0 );
+            if ( kbd[ Qt::Key_J ] ) rotate( 0, 0, -15 );
+            if ( kbd[ Qt::Key_K ] ) rotate( 0, 0, +15 );
+            kbd[event->key()] = false;
+        }
+        break;
 	default:
 		event->ignore();
 		break;

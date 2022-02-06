@@ -146,7 +146,7 @@ public:
 	void setDebugMode( DebugMode );
 
 	QColor clearColor() const;
-
+    void doLighting();
 
 	QModelIndex indexAt( const QPoint & p, int cycle = 0 );
 

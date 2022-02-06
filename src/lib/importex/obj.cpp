@@ -369,7 +369,9 @@ static void writeParent( const NifModel * nif, const QModelIndex & iNode, QTextS
 						writeData( nif, nif->getBlock( nif->getLink( iStrips.child( r, 0 ) ), "NiTriStripsData" ), obj, ofs, t * bt );
 				}
 			}
-		}
+        } else if (nif->isNiBlock(iChild, { "BSConnectPoint::Children", "BSConnectPoint::Parents"})) {
+            //QFile
+        }
 	}
 }
 
