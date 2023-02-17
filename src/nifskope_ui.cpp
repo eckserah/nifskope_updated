@@ -780,9 +780,10 @@ void NifSkope::onLoadComplete( bool success, QString & fname )
 	} else {
 		mExport->setDisabled( false );
 		mImport->setDisabled( false );
-		if ( nif->getUserVersion2() >= 100 )
-			mImport->actions().at(0)->setDisabled(true);
-		else if ( nif->getUserVersion2() == 0 )
+        //if ( nif->getUserVersion2() >= 155 )
+        //	mImport->actions().at(0)->setDisabled(true);
+        //else
+        if ( nif->getUserVersion2() == 0 )
 			mImport->actions().at(1)->setDisabled(true);
 	}
 

@@ -84,9 +84,10 @@ void NifSkope::sltImportExport( QAction * a )
 		mImport->setDisabled( false );
 		mExport->setDisabled( false );
 
-		if ( nif->getUserVersion2() >= 100 )
-			mImport->actions().at(0)->setDisabled( true );
-		else if ( nif->getUserVersion2() == 0 )
+        //if ( nif->getUserVersion2() >= 100 )
+        //	mImport->actions().at(0)->setDisabled( true );
+        //else
+        if ( nif->getUserVersion2() == 0 )
 			mImport->actions().at(1)->setDisabled( true );
 	}
 
