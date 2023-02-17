@@ -351,10 +351,10 @@ static void writeParent( const NifModel * nif, const QModelIndex & iNode, QTextS
 								bool flip = Vector3::dotproduct( n, fn ) < 0;
 
 								obj << "f"
-								    << " " << tri[0] + ofs[0]
-								    << " " << tri[ flip ? 2 : 1 ] + ofs[0]
-								    << " " << tri[ flip ? 1 : 2 ] + ofs[0]
-								    << "\r\n";
+									<< " " << tri[0] + ofs[0]
+									<< " " << tri[ flip ? 2 : 1 ] + ofs[0]
+									<< " " << tri[ flip ? 1 : 2 ] + ofs[0]
+									<< "\r\n";
 							}
 
 							ofs[0] += verts.count();
@@ -369,9 +369,9 @@ static void writeParent( const NifModel * nif, const QModelIndex & iNode, QTextS
 						writeData( nif, nif->getBlock( nif->getLink( iStrips.child( r, 0 ) ), "NiTriStripsData" ), obj, ofs, t * bt );
 				}
 			}
-        } else if (nif->isNiBlock(iChild, { "BSConnectPoint::Children", "BSConnectPoint::Parents"})) {
-            //QFile
-        }
+		} else if (nif->isNiBlock(iChild, { "BSConnectPoint::Children", "BSConnectPoint::Parents"})) {
+			//QFile
+		}
 	}
 }
 
