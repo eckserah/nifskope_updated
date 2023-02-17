@@ -297,6 +297,8 @@ public:
 	//! Undo Stack for changes to NifModel
 	QUndoStack * undoStack = nullptr;
 
+    bool shouldStop( NifItem * parent ) const;
+
 public slots:
 	void updateSettings();
 

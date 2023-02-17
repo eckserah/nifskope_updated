@@ -2188,6 +2188,9 @@ int NifModel::blockSize( NifItem * parent, NifSStream & stream ) const
 	if ( !parent )
 		return 0;
 
+    bool stopCalc = shouldStop(parent);
+    QString name;
+
 	for ( int row = 0; row < parent->childCount(); row++ ) {
 		NifItem * child = parent->child( row );
 
@@ -2211,6 +2214,18 @@ int NifModel::blockSize( NifItem * parent, NifSStream & stream ) const
 				size += stream.size( child->value() );
 			}
 		}
+
+        if ( stopCalc && child->name() == "Name" ) {
+            auto idx = child->value().get<int>();
+            if ( idx != -1 ) {
+                NifItem * header = getHeaderItem();
+                QModelIndex stringIndex = createIndex( header->row(), 0, header );
+                name = get<QString>( this->index( idx, 0, getIndex( stringIndex, "Strings" ) ) );
+            }
+        }
+
+        if ( stopCalc && child->name() == "Controller" && !name.isEmpty() )
+            break;
 	}
 
 	return size;
@@ -2221,11 +2236,7 @@ bool NifModel::loadItem( NifItem * parent, NifIStream & stream )
 	if ( !parent )
 		return false;
 
-	bool stopRead = false;
-	if ( getUserVersion2() == 155 && parent->parent() == root ) {
-		if ( parent->name() == "BSLightingShaderProperty" || parent->name() == "BSEffectShaderProperty" )
-			stopRead = true;
-	}
+    bool stopRead = shouldStop(parent);
 
 	QString name;
 
@@ -2291,11 +2302,7 @@ bool NifModel::saveItem( NifItem * parent, NifOStream & stream ) const
 	if ( !parent )
 		return false;
 
-    bool stopWrite = false;
-    if ( getUserVersion2() == 155 && parent->parent() == root ) {
-        if ( parent->name() == "BSLightingShaderProperty" || parent->name() == "BSEffectShaderProperty" )
-            stopWrite = true;
-    }
+    bool stopWrite = shouldStop(parent);
 
     QString name;
 
@@ -2315,7 +2322,7 @@ bool NifModel::saveItem( NifItem * parent, NifOStream & stream ) const
 					}
 				}
 
-				if ( !saveItem( child, stream ) )
+                if ( !saveItem( child, stream ) )
 					return false;
 			} else {
 				if ( !stream.write( child->value() ) )
@@ -3033,6 +3040,13 @@ void NifModel::updateModel( UpdateType value )
 		emit linksChanged();
 }
 
+bool NifModel::shouldStop( NifItem * parent ) const {
+    if ( getUserVersion2() >= 151 && parent->parent() == root ) {
+        if ( parent->name() == "BSLightingShaderProperty" || parent->name() == "BSEffectShaderProperty" )
+            return true;
+    }
+    return false;
+}
 
 /*
  *  NifModelEval
