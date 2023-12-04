@@ -70,7 +70,9 @@ QCoreApplication * createApplication( int &argc, char *argv[] )
 int main( int argc, char * argv[] )
 {
 	QScopedPointer<QCoreApplication> app( createApplication( argc, argv ) );
-
+    //QMessageBox tmpMsgBox;
+    //tmpMsgBox.setText("Nifskope opened!");
+    //tmpMsgBox.exec();
 	if ( auto a = qobject_cast<QApplication *>(app.data()) ) {
 		a->setOrganizationName( "NifTools" );
 		a->setOrganizationDomain( "niftools.org" );
@@ -131,10 +133,17 @@ int main( int argc, char * argv[] )
 			}
 		}
 
+        //QMessageBox msgBox;
+        //msgBox.setText("Test");
 		// No files were passed to NifSkope, push empty string
 		if ( fnames.isEmpty() ) {
 			fnames.push( QString() );
-		}
+            //msgBox.setText("No files found");
+        } //else {
+            //msgBox.setText(fnames.top());
+        //}
+
+        //msgBox.exec();
 
 		if ( IPCsocket * ipc = IPCsocket::create( port ) ) {
 			//qDebug() << "IPCSocket exec";

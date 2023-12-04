@@ -1509,10 +1509,10 @@ void GLView::saveImage()
 			// Supersampling
 			int ss = grpSize->checkedId();
 
-			int w, h;
+            int w, h, ow, oh;
 
-			w = width();
-			h = height();
+            w = ow = width();
+            h = oh = height();
 
 			// Resize viewport for supersampling
 			if ( ss > 1 ) {
@@ -1522,10 +1522,10 @@ void GLView::saveImage()
 				resizeGL( w, h );
 			}
 
-            QColor newColor = clearColor();
-            newColor.setAlpha(0);
+            QColor newColor = QColor(255, 0, 231, 0);
             qglClearColor( newColor );
-
+            Scene::SceneOptions tmpOptions = scene->options;
+            scene->options &= ~(Scene::ShowAxes|Scene::ShowGrid);
 			QOpenGLFramebufferObjectFormat fboFmt;
             fboFmt.setTextureTarget( GL_TEXTURE_3D );
             fboFmt.setInternalTextureFormat( GL_RGBA );
@@ -1538,10 +1538,10 @@ void GLView::saveImage()
             fbo.bind();
             glClear(GL_COLOR_BUFFER_BIT);
 
+            doLighting();
+
 			update();
             updateGL();
-
-            doLighting();
 
 			fbo.release();
 
@@ -1549,7 +1549,7 @@ void GLView::saveImage()
 
 			// Return viewport to original size
 			if ( ss > 1 )
-				resizeGL( width(), height() );
+                resizeGL( ow, oh );
 
 
 			QImageWriter writer( file->file() );
@@ -1565,6 +1565,9 @@ void GLView::saveImage()
 			} else if ( file->file().endsWith( ".webp", Qt::CaseInsensitive ) ) {
 				writer.setFormat( "webp" );
 				writer.setQuality( 75 + pixQuality->value() / 4 );
+            } else if ( file->file().endsWith( ".png", Qt::CaseInsensitive ) ) {
+                writer.setFormat( "png" );
+                writer.setCompression(100);
             }
 
 			if ( writer.write( *img ) ) {
@@ -1573,6 +1576,7 @@ void GLView::saveImage()
 				Message::critical( this, tr( "Could not save %1" ).arg( file->file() ) );
 			}
             qglClearColor(clearColor());
+            scene->options = tmpOptions;
 			delete img;
 			img = nullptr;
 		}

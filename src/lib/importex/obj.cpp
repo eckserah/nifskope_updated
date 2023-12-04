@@ -391,9 +391,9 @@ void exportObj( const NifModel * nif, const QModelIndex & index )
 
 		if ( nif->inherits( index, "NiNode" ) ) {
 			question = tr( "NiNode selected.  All children of selected node will be exported." );
-		} else if ( nif->itemName( index ) == "NiTriShape" || nif->itemName( index ) == "NiTriStrips" ) {
+        } else if ( nif->itemName( index ) == "NiTriShape" || nif->itemName( index ) == "NiTriStrips" || nif->itemName( index ) == "BSTriShape" || nif->itemName( index ) == "BSSubIndexTriShape" || nif->itemName( index ) == "BSMeshLODTriShape" ) {
 			question = nif->itemName( index ) + tr( " selected.  Selected mesh will be exported." );
-		}
+        }
 	}
 
 	if ( question.size() == 0 ) {
@@ -458,6 +458,8 @@ void exportObj( const NifModel * nif, const QModelIndex & index )
 			writeParent( nif, iBlock, sobj, smtl, ofs, Transform() );
 		else if ( nif->isNiBlock( iBlock, { "NiTriShape", "NiTriStrips" } ) )
 			writeShape( nif, iBlock, sobj, smtl, ofs, Transform() );
+        else if ( nif->isNiBlock( iBlock, { "BSTriShape", "BSSubIndexTriShape", "BSMeshLODTriShape" } ) )
+            writeShape( nif, iBlock, sobj, smtl, ofs, Transform() );
 	}
 
 	settings.setValue( "File Name", fobj.fileName() );
@@ -562,6 +564,14 @@ static void addLink( NifModel * nif, const QModelIndex & iBlock, const QString &
 	nif->set<int>( iSize, numIndices + 1 );
 	nif->updateArray( iArray );
 	nif->setLink( iArray.child( numIndices, 0 ), link );
+}
+
+void importObjToNiTriShape(NifModel * nif) {
+
+}
+
+void importObjToBSTriShape(NifModel * nif) {
+
 }
 
 void importObj( NifModel * nif, const QModelIndex & index, bool collision )
@@ -773,7 +783,10 @@ void importObj( NifModel * nif, const QModelIndex & index, bool collision )
 			bool newiShape = false;
 
 			if ( iShape.isValid() == false || first_tri_shape == false ) {
-				iShape = nif->insertNiBlock( "NiTriShape" );
+                if (nif->getUserVersion2() < 100)
+                    iShape = nif->insertNiBlock( "NiTriShape" );
+                else
+                    iShape = nif->insertNiBlock( "BSTriShape" );
 				newiShape = true;
 			}
 
@@ -1062,7 +1075,7 @@ void importObj( NifModel * nif, const QModelIndex & index, bool collision )
 			nif->set<float>( iData, "Radius", radius );
 
 			// do not stitch, because it looks better in the cs
-			QVector<QVector<quint16> > strips = stripify( triangles );
+            QVector<QVector<quint16> > strips = stripify( triangles, false );
 
 			nif->set<int>( iData, "Num Strips", strips.count() );
 			nif->set<int>( iData, "Has Points", 1 );

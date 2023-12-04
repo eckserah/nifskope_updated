@@ -113,7 +113,8 @@ public:
 		spnRadius->setRange( 0, 0.5 );
 		spnRadius->setDecimals( 4 );
 		spnRadius->setSingleStep( 0.001 );
-		spnRadius->setValue( 0.05 );
+        //spnRadius->setValue( 0.05 ); Keeping for later.
+        spnRadius->setValue( 0.01 );
 		vbox->addWidget( spnRadius );
 
 		QHBoxLayout * hbox = new QHBoxLayout;
